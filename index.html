@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bangla Comment Topic and Sentiment Detector</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container my-4">
+        <!-- Page Heading with Background -->
+        <div class="header-section text-center mb-4">
+            <div class="header-content">
+                <h1 class="h2 fw-normal text-white mb-2">
+                    <i class="fas fa-brain me-2"></i>
+                    Bangla Comment Topic and Sentiment Detector
+                </h1>
+                <p class="text-white-50 mb-0">Analyze individual comments or entire YouTube video discussions</p>
+            </div>
+        </div>
+
+        <!-- Single Comment Prediction Card -->
+        <div class="card mb-3">
+            <div class="card-header bg-light border-bottom">
+                <h6 class="card-title mb-0 text-dark"><i class="fas fa-comment me-2"></i>Single Comment Analysis</h6>
+            </div>
+            <div class="card-body py-3">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <input type="text" id="commentInput" class="form-control" 
+                                   placeholder="Enter Bangla comment here..." aria-label="Bangla comment">
+                            <button id="predictBtn" class="btn btn-outline-dark px-3" type="button">
+                                Predict
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Single Comment Result -->
+                <div id="singleResult" class="result-display" style="display: none;">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="alert alert-light border text-center py-2 mt-3 mb-0">
+                                <strong>Topic:</strong> <span id="topicResult"></span>
+                                <span class="mx-3 text-muted">|</span>
+                                <strong>Sentiment:</strong> <span id="sentimentResult"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- YouTube URL Analysis Card -->
+        <div class="card mb-3">
+            <div class="card-header bg-light border-bottom">
+                <h6 class="card-title mb-0 text-dark"><i class="fab fa-youtube me-2"></i>YouTube Video Analysis</h6>
+            </div>
+            <div class="card-body py-3">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <input type="text" id="youtubeUrlInput" class="form-control" 
+                                   placeholder="Enter YouTube video URL..." aria-label="YouTube URL">
+                            <button id="analyzeBtn" class="btn btn-outline-dark px-3" type="button">
+                                Analyze
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- YouTube Analysis Results Card -->
+        <div id="analysisResultCard" class="card mb-3" style="display: none;">
+            <div class="card-header bg-light border-bottom">
+                <h6 class="card-title mb-0 text-dark"><i class="fas fa-chart-pie me-2"></i>Analysis Results</h6>
+            </div>
+            <div class="card-body py-3">
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center py-4">
+                    <div class="spinner-border text-secondary mb-2" role="status" style="width: 2rem; height: 2rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mb-0">Analyzing comments...</p>
+                </div>
+
+                <!-- Results State -->
+                <div id="resultsState" style="display: none;">
+                    <div class="row text-center mb-3">
+                        <div class="col-md-6">
+                            <div class="py-2">
+                                <p class="text-muted mb-1 small">This video is mostly about:</p>
+                                <h5 class="text-dark mb-0" id="topTopicResult"></h5>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="py-2">
+                                <p class="text-muted mb-1 small">Sentiment towards this video is:</p>
+                                <h5 class="text-dark mb-0">Mostly <span id="topSentimentResult"></span></h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Results Button -->
+                    <div class="d-grid mb-2">
+                        <button id="advancedResultsBtn" class="btn btn-outline-secondary toggle-btn" type="button">
+                            Advanced Results
+                            <i class="fas fa-chevron-down toggle-icon ms-2 small"></i>
+                        </button>
+                    </div>
+
+                    <!-- Advanced Results Section -->
+                    <div id="advancedResults" class="collapse">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="card border">
+                                    <div class="card-header bg-light py-2">
+                                        <h6 class="mb-0 small text-dark">Topic Distribution</h6>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <div class="row">
+                                            <div class="col-6" id="topicPercentages">
+                                                <!-- Topic percentages will be populated here -->
+                                            </div>
+                                            <div class="col-6">
+                                                <canvas id="topicChart" width="200" height="200"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border">
+                                    <div class="card-header bg-light py-2">
+                                        <h6 class="mb-0 small text-dark">Sentiment Distribution</h6>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <div class="row">
+                                            <div class="col-6" id="sentimentPercentages">
+                                                <!-- Sentiment percentages will be populated here -->
+                                            </div>
+                                            <div class="col-6">
+                                                <canvas id="sentimentChart" width="200" height="200"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Full Results Button -->
+                    <div class="d-grid">
+                        <button id="fullResultsBtn" class="btn btn-outline-secondary toggle-btn" type="button">
+                            See Full Results
+                            <i class="fas fa-chevron-down toggle-icon ms-2 small"></i>
+                        </button>
+                    </div>
+
+                    <!-- Full Results Table -->
+                    <div id="fullResults" class="collapse mt-3">
+                        <div class="table-container">
+                            <table id="resultsTable" class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 8%;">Sl No.</th>
+                                        <th style="width: 60%;">Comment</th>
+                                        <th style="width: 16%;">Topic</th>
+                                        <th style="width: 16%;">Sentiment</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
