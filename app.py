@@ -24,7 +24,7 @@ from bnltk.tokenize import Tokenizers
 from bnltk.stemmer import BanglaStemmer
 
 # Load models
-model = 'lstm'
+model = 'bilstm'
 sentiment_model = load_model(f'models/{model}/sentiment_model.h5')
 topic_model = load_model(f'models/{model}/topic_model.h5')
 
