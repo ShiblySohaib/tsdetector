@@ -24,7 +24,7 @@ from bnltk.tokenize import Tokenizers
 from bnltk.stemmer import BanglaStemmer
 
 # Load models
-model = 'bilstm'
+model = 'bilstm-fasttext'
 sentiment_model = load_model(f'models/{model}/sentiment_model.h5')
 topic_model = load_model(f'models/{model}/topic_model.h5')
 
@@ -39,18 +39,38 @@ with open(f'models/{model}/sentiment_encoder.pkl', 'rb') as f:
     sentiment_encoder = pickle.load(f)
 
 MAX_LEN = 100
-MAX_COMMENT_COUNT = 500
 
 tokenizer_bn = Tokenizers()
 stemmer = BanglaStemmer()
-def preprocess_bangla(text):
-    text = re.sub(r"[^অ-হঀ-৺০-৯\s]", " ", text)
+
+def enhanced_preprocess_bangla(text):
+    if pd.isna(text) or text == '':
+        return ''
+    
+    text = str(text).strip()
+    text = re.sub(r'http\S+|www\.\S+', '', text)
+    text = re.sub(r'@\w+|#\w+', '', text)
+    text = re.sub(r"[^অ-হঀ-৺০-৯।!?,.;\s]", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
+    
+    if len(text) < 3:
+        return ''
+    
     tokens = tokenizer_bn.bn_word_tokenizer(text)
-    stemmed_tokens = [stemmer.stem(token) for token in tokens if token.strip()]
-    return " ".join(stemmed_tokens)
-
-
+    processed_tokens = []
+    for token in tokens:
+        token = token.strip()
+        if len(token) > 0:
+            try:
+                stemmed = stemmer.stem(token)
+                if stemmed:
+                    processed_tokens.append(stemmed)
+                else:
+                    processed_tokens.append(token)
+            except:
+                processed_tokens.append(token)
+    
+    return " ".join(processed_tokens)
 
 app = Flask(__name__)
 CORS(app)
@@ -70,7 +90,7 @@ def analyze():
         return jsonify({'error': 'Invalid YouTube URL'}), 400
     filtered_comments = set()
     next_page_token = None
-    while len(filtered_comments) < MAX_COMMENT_COUNT:
+    while len(filtered_comments) < 500:
         request_y = youtube.commentThreads().list(
             part="snippet",
             videoId=video_id,
@@ -89,11 +109,11 @@ def analyze():
         next_page_token = response.get("nextPageToken")
         if not next_page_token:
             break
-    comments = list(filtered_comments)[:MAX_COMMENT_COUNT]
+    comments = list(filtered_comments)[:500]
     if not comments:
         return jsonify({'error': 'No Bangla comments found'}), 404
     # Predict topic and sentiment for each comment
-    processed = [preprocess_bangla(c) for c in comments]
+    processed = [enhanced_preprocess_bangla(c) for c in comments]
     seqs = tokenizer.texts_to_sequences(processed)
     padded = pad_sequences(seqs, maxlen=MAX_LEN, padding='post')
     topic_preds = topic_model.predict(padded)
@@ -101,42 +121,25 @@ def analyze():
     topic_labels = topic_encoder.inverse_transform(np.argmax(topic_preds, axis=1))
     sentiment_labels = sentiment_encoder.inverse_transform(np.argmax(sentiment_preds, axis=1))
     # Calculate percentages
-    topic_classes = list(topic_encoder.classes_)
-    sentiment_classes = list(sentiment_encoder.classes_)
     topic_counts = pd.Series(topic_labels).value_counts(normalize=True) * 100
-    topic_counts = topic_counts.reindex(topic_classes, fill_value=0)
     sentiment_counts = pd.Series(sentiment_labels).value_counts(normalize=True) * 100
-    sentiment_counts = sentiment_counts.reindex(sentiment_classes, fill_value=0)
     # Prepare detailed results for table
     detailed_results = [
         {'comment': c, 'topic': t, 'sentiment': s}
         for c, t, s in zip(comments, topic_labels, sentiment_labels)
     ]
-
-    censorable_count = sum(
-        (res['topic'].lower() == 'threat') or 
-        (res['topic'].lower() == 'abusive') or 
-        (res['sentiment'].lower() == 'hate')
-        for res in detailed_results
-    )
-    censorable_percentage = (censorable_count / len(detailed_results) * 100) if detailed_results else 0
-
     return jsonify({
         'topic_percentages': topic_counts.to_dict(),
         'sentiment_percentages': sentiment_counts.to_dict(),
         'total_comments': len(comments),
-        'detailed_results': detailed_results,
-        'censorable_results': {
-            'count': censorable_count,
-            'percentage': censorable_percentage
-        }
+        'detailed_results': detailed_results
     })
 
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
     comment = data.get('comment', '')
-    processed = preprocess_bangla(comment)
+    processed = enhanced_preprocess_bangla(comment)
     seq = tokenizer.texts_to_sequences([processed])
     padded = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
     topic_pred = topic_model.predict(padded)

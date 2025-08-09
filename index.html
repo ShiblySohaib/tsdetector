@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,22 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
+    <div class="area">
+        <ul class="circles">
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+        </ul>
+    </div>
     <div class="container my-4">
         <!-- Page Heading with Background -->
         <div class="header-section text-center mb-4">
@@ -24,16 +40,19 @@
         <!-- Single Comment Prediction Card -->
         <div class="card mb-3">
             <div class="card-header bg-light border-bottom">
-                <h6 class="card-title mb-0 text-dark"><i class="fas fa-comment me-2"></i>Single Comment Analysis</h6>
+                <h6 class="card-title mb-0 d-flex align-items-center">
+                    <i class="fas fa-comment fa-2x me-2"></i>&nbsp;Single Comment Analysis
+                </h6>
             </div>
             <div class="card-body py-3">
                 <div class="row justify-content-center">
                     <div class="col-md-8">
                         <div class="input-group">
-                            <input type="text" id="commentInput" class="form-control" 
-                                   placeholder="Enter Bangla comment here..." aria-label="Bangla comment">
-                            <button id="predictBtn" class="btn btn-outline-dark px-3" type="button">
-                                Predict
+                            <i class="fa-solid fa-keyboard p-3 card border"></i>
+                            <input type="text" id="commentInput" class="form-control"
+                                placeholder="Enter Bangla comment here..." aria-label="Bangla comment">
+                            <button id="predictBtn" class="btn btn-success px-3" type="button">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Predict
                             </button>
                         </div>
                     </div>
@@ -43,9 +62,9 @@
                     <div class="row justify-content-center">
                         <div class="col-md-8">
                             <div class="alert alert-light border text-center py-2 mt-3 mb-0">
-                                <strong>Topic:</strong> <span id="topicResult"></span>
+                                <strong>🎯 Topic:</strong> <span id="topicResult"></span>
                                 <span class="mx-3 text-muted">|</span>
-                                <strong>Sentiment:</strong> <span id="sentimentResult"></span>
+                                <strong>💭 Sentiment:</strong> <span id="sentimentResult"></span>
                             </div>
                         </div>
                     </div>
@@ -56,16 +75,22 @@
         <!-- YouTube URL Analysis Card -->
         <div class="card mb-3">
             <div class="card-header bg-light border-bottom">
-                <h6 class="card-title mb-0 text-dark"><i class="fab fa-youtube me-2"></i>YouTube Video Analysis</h6>
+                <h6 class="card-title mb-0 d-flex align-items-center">
+                    <span class="fa-stack">
+                        <i class="fa fa-square fa-stack-1x white-bg"></i>
+                        <i class="fa-brands fa-youtube fa-stack-2x" style="color: red;"></i>
+                    </span> &nbsp; YouTube Video Analysis
+                </h6>
             </div>
             <div class="card-body py-3">
                 <div class="row justify-content-center">
                     <div class="col-md-8">
                         <div class="input-group">
-                            <input type="text" id="youtubeUrlInput" class="form-control" 
-                                   placeholder="Enter YouTube video URL..." aria-label="YouTube URL">
-                            <button id="analyzeBtn" class="btn btn-outline-dark px-3" type="button">
-                                Analyze
+                            <i class="fa-solid fa-link p-3 card border"></i>
+                            <input type="text" id="youtubeUrlInput" class="form-control"
+                                placeholder="Enter YouTube video URL..." aria-label="YouTube URL">
+                            <button id="analyzeBtn" class="btn btn-danger px-3" type="button">
+                                <i class="fa-solid fa-magnifying-glass fa-flip-horizontal"></i> Analyze
                             </button>
                         </div>
                     </div>
@@ -76,7 +101,9 @@
         <!-- YouTube Analysis Results Card -->
         <div id="analysisResultCard" class="card mb-3" style="display: none;">
             <div class="card-header bg-light border-bottom">
-                <h6 class="card-title mb-0 text-dark"><i class="fas fa-chart-pie me-2"></i>Analysis Results</h6>
+                <h6 class="card-title mb-0 d-flex align-items-center">
+                    <i class="fas fa-chart-pie fa-2x me-2" style="color: #FFD43B"></i>&nbsp;Analysis Results</h6>
+                </h6>
             </div>
             <div class="card-body py-3">
                 <!-- Loading State -->
@@ -92,13 +119,13 @@
                     <div class="row text-center mb-3">
                         <div class="col-md-6">
                             <div class="py-2">
-                                <p class="text-muted mb-1 small">This video is mostly about:</p>
+                                <p class="text-muted mb-1 small">🎯 This video is mostly about:</p>
                                 <h5 class="text-dark mb-0" id="topTopicResult"></h5>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="py-2">
-                                <p class="text-muted mb-1 small">Sentiment towards this video is:</p>
+                                <p class="text-muted mb-1 small">💭 Sentiment towards this video is:</p>
                                 <h5 class="text-dark mb-0">Mostly <span id="topSentimentResult"></span></h5>
                             </div>
                         </div>
@@ -113,12 +140,12 @@
                     </div>
 
                     <!-- Advanced Results Section -->
-                    <div id="advancedResults" class="collapse">
+                    <div id="advancedResults" class="collapse show">
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div id="topicDistribution" class="col-md-6">
                                 <div class="card border">
                                     <div class="card-header bg-light py-2">
-                                        <h6 class="mb-0 small text-dark">Topic Distribution</h6>
+                                        <h6 class="mb-0 small">Topic Distribution</h6>
                                     </div>
                                     <div class="card-body py-2">
                                         <div class="row">
@@ -132,10 +159,10 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div id="sentimentDistribution" class="col-md-6">
                                 <div class="card border">
                                     <div class="card-header bg-light py-2">
-                                        <h6 class="mb-0 small text-dark">Sentiment Distribution</h6>
+                                        <h6 class="mb-0 small">Sentiment Distribution</h6>
                                     </div>
                                     <div class="card-body py-2">
                                         <div class="row">
@@ -147,6 +174,9 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="card px-3 my-2 py-2 border" id="censorableDiv">
+                                    <canvas id="censorableBarChart" width="400" height="200"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -185,4 +215,5 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

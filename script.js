@@ -84,7 +84,7 @@ document.getElementById('analyzeBtn').addEventListener('click', async function()
             '#643000ff', '#702577ff'
         ];
         const sentimentColors = [
-            '#ff0000ff', '#ff7300ff', '#0051ffff', '#10d61aff', 
+            '#ff0000ff', '#ff7300ff', '#3f75e9ff', '#10d61aff', 
         ];
 
         // Hide loading, show results
@@ -119,6 +119,7 @@ document.getElementById('analyzeBtn').addEventListener('click', async function()
         // Populate advanced results (but keep them hidden)
         const topicDiv = document.getElementById('topicPercentages');
         const sentimentDiv = document.getElementById('sentimentPercentages');
+        const censorableDiv = document.getElementById('censorableDiv');
 
         topicDiv.innerHTML = Object.entries(data.topic_percentages)
             .map(([topic, percentage], index) => 
@@ -142,6 +143,52 @@ document.getElementById('analyzeBtn').addEventListener('click', async function()
                 </div>`
             ).join('');
 
+        // Bar chart for threat, abusive, hate
+        // Count threat, abusive, hate from detailed_results
+        let threatCount = 0, abusiveCount = 0, hateCount = 0;
+        if (data.detailed_results) {
+            data.detailed_results.forEach(row => {
+                if (row.topic && row.topic.toLowerCase() === 'threat') threatCount++;
+                if (row.topic && row.topic.toLowerCase() === 'abusive') abusiveCount++;
+                if (row.sentiment && row.sentiment.toLowerCase() === 'hate') hateCount++;
+            });
+        }
+        // Render bar chart
+        const barCanvas = document.getElementById('censorableBarChart');
+        if (window.censorableBarChartInstance) {
+            window.censorableBarChartInstance.destroy();
+        }
+        window.censorableBarChartInstance = new Chart(barCanvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Threat', 'Abusive', 'Hate'],
+                datasets: [{
+                    data: [threatCount, abusiveCount, hateCount],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(54, 162, 235, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(54, 162, 235, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: `Censorable Comments: ${data.censorable_results.count} (${data.censorable_results.percentage.toFixed(1)}%)` }
+                },
+                scales: {
+                    y: { beginAtZero: true, precision: 0 }
+                }
+            }
+        });
+
         // Create charts immediately with fixed dimensions
         createChartsWithFixedSize(data.topic_percentages, data.sentiment_percentages, topicColors, sentimentColors);
 
@@ -150,14 +197,23 @@ document.getElementById('analyzeBtn').addEventListener('click', async function()
             const tbody = document.querySelector('#resultsTable tbody');
             tbody.innerHTML = '';
             data.detailed_results.forEach((row, idx) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${idx + 1}</td>
-                    <td>${row.comment}</td>
-                    <td>${row.topic}</td>
-                    <td>${row.sentiment}</td>
-                `;
-                tbody.appendChild(tr);
+            // Check if the row is censorable
+            const topic = row.topic ? row.topic.toLowerCase() : '';
+            const sentiment = row.sentiment ? row.sentiment.toLowerCase() : '';
+            const isCensorable =
+                (topic === 'threat' || topic === 'abusive') ||
+                (sentiment === 'hate');
+            const tr = document.createElement('tr');
+            if (isCensorable) {
+                tr.classList.add('censored-row');
+            }
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${row.comment}</td>
+                <td>${row.topic}</td>
+                <td>${row.sentiment}</td>
+            `;
+            tbody.appendChild(tr);
             });
         }
 
@@ -264,4 +320,120 @@ document.getElementById('fullResultsBtn').addEventListener('click', function() {
         fullResults.classList.add('show');
         this.setAttribute('aria-expanded', 'true');
     }
+});
+
+
+//background
+$(document).ready(function(){
+	// set #background-* to full window height and fade in the body
+	var width = $(window).width();
+	var height = $(window).height();
+		$('#background-container, #background-1, #background-2').css({
+			'min-width': width,
+			'min-height': height
+		});
+
+	// call new svg and start recreate svg timeout
+	svgNew();
+	recreateSvg();
+});
+
+// set global svg object
+var svg = {};
+// used to determine which background to draw to
+var draw = 1;
+// create new svg 
+var svgNew = function(){
+	svg.t = new Trianglify({
+		noiseIntensity: 0,
+	});
+	// set svg size to window height and width
+	svg.width = $(window).width();
+	svg.height = $(window).height();
+	svg.pattern = svg.t.generate(svg.width, svg.height);
+	// draw svg on to either background 1 or 2
+	if (draw === 1) {
+		svgDraw1();
+	} else {
+		svgDraw2();
+	}
+}; // end svgNew
+
+// draw svg on to bg1 and call fade
+// if called with resize, redraw the svg to match new size and do not call fade
+var svgDraw1 = function (resize){
+	draw = 2;
+	if (resize === 'resize') {	
+		svg.pattern = svg.t.generate(svg.width, svg.height);
+		$('#background-1').css({
+			'min-width': svg.width,
+			'min-height': svg.height,
+			'background': svg.pattern.dataUrl
+		});
+		$('#contact-background-1').css({
+			'min-width': svg.width,
+			'min-height': (svg.height / 2),
+			'background': svg.pattern.dataUrl
+		});
+	} else {
+		$('.background-1').css({
+			'background': svg.pattern.dataUrl
+		});
+		fade1();
+	}
+}; // end svgDraw1
+
+// same as above but for bg2
+var svgDraw2 = function(resize){
+	draw = 1;
+	if (resize === 'resize') {	
+		svg.pattern = svg.t.generate(svg.width, svg.height);
+		$('#background-2').css({
+			'min-width': svg.width,
+			'min-height': svg.height,
+			'background': svg.pattern.dataUrl
+		});
+		$('#contact-background-2').css({
+			'min-width': svg.width,
+			'min-height': (svg.height / 2),
+			'background': svg.pattern.dataUrl
+		});
+	} else {
+		$('.background-2').css({
+			'background': svg.pattern.dataUrl
+		});
+		fade2();
+	}
+}; // end svgDraw2
+
+// fade in bg1 and fade our bg2
+var fade1 = function(){
+	$('.background-1').velocity("fadeIn", { duration: 3000 });
+	$('.background-2').velocity("fadeOut", { duration: 4000 });
+};
+// fade in bg2 and fade out bg1
+var fade2 = function(){
+	$('.background-2').velocity("fadeIn", { duration: 3000 });
+	$('.background-1').velocity("fadeOut", { duration: 4000 });
+};
+
+// timeout function to create new svg every 5 seconds
+var recreateSvg = function(){
+ 	window.setInterval(svgNew, 5000);
+};
+
+// redraw the current svg to match screen size on resize
+$(window).resize(function() {
+	svg.width = $(window).width();
+	svg.height = $(window).height();
+	$('#background-container').css({
+		'min-width': svg.width,
+		'min-height': svg.height
+	});
+	$('#contact-container').css({
+		'min-width': svg.width,
+		'min-height': (svg.height / 2)
+	});
+	svgDraw1('resize');
+	svgDraw2('resize');
 });
